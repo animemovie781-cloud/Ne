@@ -36,7 +36,8 @@ class _HomePageState extends State<HomePage> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredAnime = dummyAnimeList.where((anime) {
-        final matchesSearch = anime.title.toLowerCase().contains(query) ||
+        final matchesSearch = query.isEmpty ||
+            anime.title.toLowerCase().contains(query) ||
             anime.description.toLowerCase().contains(query);
         final matchesLanguage = _selectedLanguage == 'All' ||
             anime.language == _selectedLanguage;
@@ -54,31 +55,51 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.body,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    LanguageSelector(onLanguageSelected: _selectLanguage),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('Popular Anime'),
-                    const SizedBox(height: 12),
-                    _buildAnimeGrid(),
-                  ],
-                ),
-              ),
-            ),
-          ],
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              const SizedBox(height: 16),
+              LanguageSelector(onLanguageSelected: _selectLanguage),
+              const SizedBox(height: 24),
+              _buildSectionTitle('Popular Anime'),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
-      ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.65,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return AnimeCard(
+                  anime: _filteredAnime[index],
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AnimeDetailPage(anime: _filteredAnime[index]),
+                      ),
+                    );
+                  },
+                );
+              },
+              childCount: _filteredAnime.length,
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 80),
+        ),
+      ],
     );
   }
 
@@ -169,34 +190,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildAnimeGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.65,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: _filteredAnime.length,
-      itemBuilder: (context, index) {
-        return AnimeCard(
-          anime: _filteredAnime[index],
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AnimeDetailPage(anime: _filteredAnime[index]),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }
